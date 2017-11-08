@@ -3,7 +3,7 @@
 # Name: auto_garp.py
 # Author: Justin Mammarella
 # Date: November 2017
-# Description: Generate gratuitious ARP for newly launched VMS.
+# Description: Generate gratuitious ARP for newly launched instances.
 
 import os
 import time
