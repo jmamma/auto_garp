@@ -3,7 +3,7 @@
 # Name: auto_garp.py
 # Author: Justin Mammarella
 # Date: November 2017
-# Description: Generate gratuitious ARP for newly launched instances.
+# Description: Generate gratuitious ARP for newly launched VMS.
 
 import os
 import time
@@ -18,24 +18,41 @@ def cmdline(command):
     proc.wait()
     return (out.splitlines(), proc.returncode)
 
+def log(text):
+    cmdline("echo '" + str(datetime.now()) + ": " + text + "' >> /var/log/autogarp.log")
+
+def my_exit(text):
+    log(text)
+    sys.exit(text)
+
 def main():
+    log("AutoGARP starting")
     macs = []
+    send_interface = None
+    (b,e) = cmdline("brctl show | grep br | awk '{ print $1 }'")
+    if b:
+      send_interface = b[1].split(' ')[0]
+      if "br" not in send_interface:
+        my_exit("Unable to detect bridge interface")
+    else:
+      my_exit("Unable to detect bridge interface")
     # Get initial list of mac addresses
+    print send_interface
     (o,e) = cmdline("ifconfig | grep tap | grep HWaddr")
     for line in o:
-        if line is not None:
-          if "fe" in line:
-              macs.append(line.split(" ")[5])
+      if line is not None:
+        if "fe" in line:
+          macs.append(line.split(" ")[5])
 
     #Periodically scan for new tap interfaces
     while True:
-      time.sleep(10)
+      time.sleep(20)
       (o,e) = cmdline("ifconfig | grep tap | grep HWaddr")
       for line in o:
         if line is not None:
           if "fe" in line:
              tap_mac = line.split(" ")[5]
-             if tap_mac not in macs: 
+             if tap_mac not in macs:
                  #We've found a new interface with a MAC not in our mac array
                  #Change tap interface mac to instance mac
                  instance_mac = "FA:" + ':'.join(tap_mac.upper().split(':')[1:])
@@ -53,10 +70,10 @@ def main():
                    if instance_ip is not None:
                       #if we have both the mac and IP we can proceed in sending the garp
                       print "Sending GARP " + instance_mac + " " + instance_ip
-                      cmdline("echo '" + str(datetime.now()) + ": Sending GARP for " + instance_mac + " " + instance_ip + "' >> /var/log/autogarp.log")
-                      print "arping -c 3 -U -b " + instance_ip + " -I bond0 -A -S " + instance_ip + " -s " + instance_mac
-                      (b,e) = cmdline("arping -c 3 -U -b " + instance_ip + " -I bond0 -A -S " + instance_ip + " -s " + instance_mac)
-                   else: 
+                      log(str(datetime.now()) + ": Sending GARP for " + instance_mac + " " + instance_ip)
+                      print "arping -c 3 -U -b " + instance_ip + " -I " + send_interface + " -A -S " + instance_ip + " -s " + instance_mac
+                      (b,e) = cmdline("arping -c 3 -U -b " + instance_ip + " -I " + send_interface + " -A -S " + instance_ip + " -s " + instance_mac)
+                   else:
                       print "Error obtaining IP"
 
 if __name__ == "__main__":
