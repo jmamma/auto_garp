@@ -53,10 +53,11 @@ def main():
                    if instance_ip is not None:
                       #if we have both the mac and IP we can proceed in sending the garp
                       print "Sending GARP " + instance_mac + " " + instance_ip
-                      cmdline("echo '" + str(datetime.now()) + ": Sending GARP for " + instance_mac + " " + instance_ip + "' > /var/log/garp.log")
+                      cmdline("echo '" + str(datetime.now()) + ": Sending GARP for " + instance_mac + " " + instance_ip + "' >> /var/log/autogarp.log")
                       print "arping -c 3 -U -b " + instance_ip + " -I bond0 -A -S " + instance_ip + " -s " + instance_mac
                       (b,e) = cmdline("arping -c 3 -U -b " + instance_ip + " -I bond0 -A -S " + instance_ip + " -s " + instance_mac)
                    else: 
                       print "Error obtaining IP"
+
 if __name__ == "__main__":
     main()
