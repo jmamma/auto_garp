@@ -50,7 +50,7 @@ def main():
       (o,e) = cmdline("ifconfig | grep tap | grep HWaddr")
       for line in o:
         if line is not None:
-          if "fe" in line:
+            if "HWaddr fe:16" in line:
              tap_mac = line.split(" ")[5]
              if tap_mac not in macs:
                  #We've found a new interface with a MAC not in our mac array
